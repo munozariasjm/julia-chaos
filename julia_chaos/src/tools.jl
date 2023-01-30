@@ -49,7 +49,52 @@ function rungekutta4(f::Function, y0::Vector, t::Vector)
     end
     return y
 end
+function get_line_params(x1, y1, x2, y2)
+    slope = (y1 - y2) / (x1 - x2)
+    intercept = y1 - slope * x1
+    return slope, intercept
+end
+function euclidean_distance(point1, point2)
+    return √((point1[1] - point2[1])^2 + (point1[2] - point2[2])^2)
+end
 
-export analytic_solve, is_stalbe, meshgrid, rungekutta4
+function solve_quadratic_equation(A, B, C)
+    x1 = (-B + √(B^2 - 4 * A * C)) / (2 * A)
+    x2 = (-B - √(B^2 - 4 * A * C)) / (2 * A)
+    return [x1, x2]
+end
+function get_datapoint(pivot, measure, length, direction="inner")
+    if pivot[1] == measure[1]
+        y1 = pivot[2] + length
+        y2 = pivot[2] - length
+        x1 = pivot[1]
+        x2 = pivot[1]
+    else
+        slope, intercept = get_line_params(pivot[1], pivot[2],
+            measure[1], measure[2],)
+        A = 1
+        B = -2 * pivot[1]
+        C = pivot[1]^2 - length^2 / (slope^2 + 1)
+        x1, x2 = solve_quadratic_equation(A, B, C)
+        y1 = slope * x1 + intercept
+        y2 = slope * x2 + intercept
+    end
+    if direction == "inner"
+        if euclidean_distance((x1, y1), measure) < euclidean_distance((x2, y2), measure)
+            datapoint = (x1, y1)
+        else
+            datapoint = (x2, y2)
+        end
+    else
+        if euclidean_distance((x1, y1), measure) > euclidean_distance((x2, y2), measure)
+            datapoint = (x1, y1)
+        else
+            datapoint = (x2, y2)
+        end
+    end
+    return datapoint
+end
+
+export analytic_solve, is_stalbe, meshgrid, rungekutta4, get_datapoint, euclidean_distance, solve_quadratic_equation
 
 end
